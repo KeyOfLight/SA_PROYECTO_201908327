@@ -1,0 +1,34 @@
+<div class="home-container">
+  <div class="page-title">
+    <h1>Bienvenido a Deliver Eats</h1>
+  </div>
+
+  <div *ngIf="currentUser" class="user-card-container">
+    <div class="user-card">
+      <div class="card-header">
+        <div class="avatar">
+          <span>{{ currentUser.email ? currentUser.email.charAt(0).toUpperCase() : '?' }}</span>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <h2 class="user-email">{{ currentUser.email }}</h2>
+        
+        <div class="role-badge" [ngClass]="getRoleColor()">
+          <span>{{ getRoleLabel() }}</span>
+        </div>
+
+        <div class="user-info">
+          <p><strong>Email:</strong> {{ currentUser.email }}</p>
+          <p *ngIf="currentUser.name"><strong>Nombre:</strong> {{ currentUser.name }}</p>
+          <p><strong>Rol:</strong> {{ getRoleLabel() }}</p>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+
+  <div *ngIf="!currentUser" class="no-user">
+    <p>Por favor, inicia sesión para ver tu información</p>
+  </div>
+</div>

@@ -1,0 +1,10 @@
+<div class="app-container" *ngIf="(currentUser$ | async) as user">
+  <app-sidebar></app-sidebar>
+  <main class="main-content">
+    <router-outlet />
+  </main>
+</div>
+
+<div *ngIf="!(currentUser$ | async)">
+  <router-outlet />
+</div>

@@ -1,0 +1,74 @@
+<div class="login-container">
+  <div class="login-box">
+    <h1 class="login-title">Deliver Eats</h1>
+    <p class="login-subtitle">Inicia sesión en tu cuenta</p>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email" class="form-label">Email</label>
+        <input
+          type="email"
+          id="email"
+          class="form-control"
+          formControlName="email"
+          placeholder="tu@email.com"
+          [class.is-invalid]="submitted && f['email'].errors"
+        />
+        <div class="error-message" *ngIf="submitted && f['email'].errors">
+          <span *ngIf="f['email'].errors['required']">El email es requerido</span>
+          <span *ngIf="f['email'].errors['email']">Ingresa un email válido</span>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password" class="form-label">Contraseña</label>
+        <input
+          type="password"
+          id="password"
+          class="form-control"
+          formControlName="password"
+          placeholder="••••••••"
+          [class.is-invalid]="submitted && f['password'].errors"
+        />
+        <div class="error-message" *ngIf="submitted && f['password'].errors">
+          <span *ngIf="f['password'].errors['required']">La contraseña es requerida</span>
+          <span *ngIf="f['password'].errors['minlength']">Mínimo 6 caracteres</span>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div class="alert alert-error" *ngIf="error">
+        {{ error }}
+      </div>
+
+      <!-- Buttons -->
+      <div class="button-group">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="loading"
+        >
+          <span *ngIf="!loading">Iniciar Sesión</span>
+          <span *ngIf="loading">Cargando...</span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="resetForm()"
+          [disabled]="loading"
+        >
+          Limpiar
+        </button>
+      </div>
+    </form>
+
+    <!-- Footer Links -->
+    <div class="login-footer">
+      <a href="#" class="link">¿Olvidaste tu contraseña?</a>
+      <span class="separator">|</span>
+      <a href="#" class="link">Crear cuenta</a>
+    </div>
+  </div>
+</div>

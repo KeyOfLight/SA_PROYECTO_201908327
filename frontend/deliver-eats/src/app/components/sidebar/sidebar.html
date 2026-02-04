@@ -1,0 +1,42 @@
+<div class="sidebar-wrapper" [class.open]="isSidebarOpen">
+  <div class="sidebar">
+    <!-- Header del Sidebar -->
+    <div class="sidebar-header">
+      <h2>Deliver Eats</h2>
+      <button class="toggle-btn" (click)="toggleSidebar()">
+        {{ isSidebarOpen ? '✕' : '☰' }}
+      </button>
+    </div>
+
+    <!-- Usuario actual -->
+    <div class="user-section" *ngIf="currentUser">
+      <div class="user-avatar">
+        {{ currentUser.email ? currentUser.email.charAt(0).toUpperCase() : '?' }}
+      </div>
+      <div class="user-info">
+        <p class="user-email">{{ currentUser.email }}</p>
+        <p class="user-role">{{ currentUser.role }}</p>
+      </div>
+    </div>
+
+    <!-- Menu Items -->
+    <nav class="sidebar-menu">
+      <ul>
+        <li *ngFor="let item of getVisibleMenuItems()">
+          <a [routerLink]="item.route" routerLinkActive="active">
+            <span class="icon">{{ item.icon }}</span>
+            <span class="label" *ngIf="isSidebarOpen">{{ item.label }}</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Footer del Sidebar -->
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()" *ngIf="currentUser">
+        <span class="icon">🚪</span>
+        <span class="label" *ngIf="isSidebarOpen">Cerrar sesión</span>
+      </button>
+    </div>
+  </div>
+</div>

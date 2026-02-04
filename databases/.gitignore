@@ -1,0 +1,7 @@
+# Ignorar datos de MySQL
+mysql_data/
+*.log
+
+# Ignorar archivos temporales
+.DS_Store
+Thumbs.db
