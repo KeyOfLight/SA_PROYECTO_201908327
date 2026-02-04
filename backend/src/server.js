@@ -6,7 +6,7 @@ const { connectDB } = require('./config/database');
 const config = require('./config/config');
 
 // Importar rutas
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/auth.routes');
 
 // Crear aplicación Express
 const app = express();

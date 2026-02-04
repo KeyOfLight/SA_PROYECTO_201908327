@@ -4,7 +4,7 @@
 export const Backend = {
     routes: {
         login: '/auth/login',
-        signup: '/auth/signup',
+        register: '/auth/register',
         auth: '/auth/validate-token',
     },
     backend_route: 'http://localhost:3000/api',

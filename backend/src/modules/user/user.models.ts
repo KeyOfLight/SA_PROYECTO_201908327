@@ -1,8 +1,24 @@
-const bcrypt = require('bcryptjs');
-const { getPool } = require('../config/database');
+import bcrypt from 'bcryptjs';
+import { RowDataPacket } from 'mysql2/promise';
+import { getPool } from '../../config/database';
 
-const mapUser = (row) => {
-  if (!row) return null;
+export interface IUser {
+  id: number;
+  email: string;
+  password?: string;
+  role: string;
+  createdAt: Date;
+}
+
+interface UserRow extends RowDataPacket {
+  id: number;
+  email: string;
+  password: string;
+  role: string;
+  created_at: Date;
+}
+
+const mapUser = (row: UserRow): IUser => {
   return {
     id: row.id,
     email: row.email,
@@ -11,9 +27,9 @@ const mapUser = (row) => {
   };
 };
 
-const findByEmail = async (email, includePassword = false) => {
+export const findByEmail = async (email: string, includePassword: boolean = false): Promise<IUser | null> => {
   const pool = getPool();
-  const [rows] = await pool.query(
+  const [rows] = await pool.query<UserRow[]>(
     'SELECT id, email, password, role, created_at FROM users WHERE email = ? LIMIT 1',
     [email]
   );
@@ -31,9 +47,9 @@ const findByEmail = async (email, includePassword = false) => {
   };
 };
 
-const findById = async (id, includePassword = false) => {
+export const findById = async (id: number, includePassword: boolean = false): Promise<IUser | null> => {
   const pool = getPool();
-  const [rows] = await pool.query(
+  const [rows] = await pool.query<UserRow[]>(
     'SELECT id, email, password, role, created_at FROM users WHERE id = ? LIMIT 1',
     [id]
   );
@@ -51,7 +67,13 @@ const findById = async (id, includePassword = false) => {
   };
 };
 
-const create = async ({ email, password, role = 'CLIENTE' }) => {
+interface CreateUserInput {
+  email: string;
+  password: string;
+  role?: string;
+}
+
+export const create = async ({ email, password, role = 'CLIENTE' }: CreateUserInput): Promise<IUser | null> => {
   const pool = getPool();
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -60,17 +82,22 @@ const create = async ({ email, password, role = 'CLIENTE' }) => {
     [email, hashedPassword, role]
   );
 
-  return findById(result.insertId);
+  return findById((result as any).insertId);
 };
 
-const comparePassword = async (candidatePassword, hashedPassword) => {
+export const comparePassword = async (candidatePassword: string, hashedPassword: string): Promise<boolean> => {
   return bcrypt.compare(candidatePassword, hashedPassword);
 };
 
-const updateProfile = async (id, { email, role }) => {
+interface UpdateProfileInput {
+  email?: string;
+  role?: string;
+}
+
+export const updateProfile = async (id: number, { email, role }: UpdateProfileInput): Promise<IUser | null> => {
   const pool = getPool();
-  const fields = [];
-  const values = [];
+  const fields: string[] = [];
+  const values: any[] = [];
 
   if (email) {
     fields.push('email = ?');
@@ -96,7 +123,7 @@ const updateProfile = async (id, { email, role }) => {
   return findById(id);
 };
 
-const updatePassword = async (id, newPassword) => {
+export const updatePassword = async (id: number, newPassword: string): Promise<void> => {
   const pool = getPool();
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
@@ -104,13 +131,4 @@ const updatePassword = async (id, newPassword) => {
     'UPDATE users SET password = ? WHERE id = ?',
     [hashedPassword, id]
   );
-};
-
-module.exports = {
-  findByEmail,
-  findById,
-  create,
-  comparePassword,
-  updateProfile,
-  updatePassword
 };

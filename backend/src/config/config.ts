@@ -1,14 +1,31 @@
-module.exports = {
+interface MySQLConfig {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  database: string;
+}
+
+interface Config {
+  nodeEnv: string;
+  port: number;
+  mysql: MySQLConfig;
+  jwtSecret: string;
+  jwtExpire: string;
+  corsOrigin: string;
+}
+
+const config: Config = {
   // Entorno
   nodeEnv: process.env.NODE_ENV || 'development',
   
   // Puerto del servidor
-  port: process.env.PORT || 3000,
+  port: Number(process.env.PORT) || 3000,
   
   // Base de datos MySQL
   mysql: {
     host: process.env.MYSQL_HOST || 'localhost',
-    port: Number(process.env.MYSQL_PORT || 3308),
+    port: Number(process.env.MYSQL_PORT) || 3308,
     user: process.env.MYSQL_USER || 'root',
     password: process.env.MYSQL_PASSWORD || 'rootpassword',
     database: process.env.MYSQL_DATABASE || 'auth_db'
@@ -21,3 +38,5 @@ module.exports = {
   // CORS
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:4200',
 };
+
+export default config;
