@@ -4,31 +4,37 @@ import { RouterModule } from '@angular/router';
 import { Auth } from '../../service/auth/auth';
 import { User } from '../../interfaces/User';
 
+const usuario_icon: string = 'https://img.icons8.com/?size=100&id=undefined&format=png&color=000000';
+const package_icon: string = 'https://img.icons8.com/?size=100&id=11229&format=png&color=000000';
+const map_icon: string = 'https://img.icons8.com/?size=100&id=110445&format=png&color=000000';
+
 @Component({
   selector: 'app-sidebar',
+  standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
+
 export class Sidebar implements OnInit {
   currentUser: User | null = null;
   isSidebarOpen = true;
   menuItems = [
     {
       label: 'Usuarios',
-      icon: '👥',
+      icon: usuario_icon,
       route: '/admin/users',
       roles: ['ADMINISTRADOR']
     },
     {
       label: 'Pedidos',
-      icon: '📦',
+      icon: package_icon,
       route: '/orders',
       roles: ['CLIENTE', 'RESTAURANTE', 'REPARTIDOR', 'ADMINISTRADOR']
     },
     {
       label: 'Rutas',
-      icon: '🗺️',
+      icon: map_icon,
       route: '/routes',
       roles: ['REPARTIDOR', 'ADMINISTRADOR']
     }

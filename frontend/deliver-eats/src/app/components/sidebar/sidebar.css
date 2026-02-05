@@ -137,6 +137,13 @@
   flex-shrink: 0;
 }
 
+.icon-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .label {
   font-size: 0.95rem;
   font-weight: 500;

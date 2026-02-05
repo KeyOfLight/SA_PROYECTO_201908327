@@ -24,7 +24,7 @@
       <ul>
         <li *ngFor="let item of getVisibleMenuItems()">
           <a [routerLink]="item.route" routerLinkActive="active">
-            <span class="icon">{{ item.icon }}</span>
+            <img class="icon-img" [src]="item.icon" [alt]="item.label" />
             <span class="label" *ngIf="isSidebarOpen">{{ item.label }}</span>
           </a>
         </li>
@@ -34,7 +34,7 @@
     <!-- Footer del Sidebar -->
     <div class="sidebar-footer">
       <button class="logout-btn" (click)="logout()" *ngIf="currentUser">
-        <span class="icon">🚪</span>
+        <img class="icon-img" src="https://img.icons8.com/?size=100&id=2445&format=png&color=000000" alt="Cerrar sesión" />
         <span class="label" *ngIf="isSidebarOpen">Cerrar sesión</span>
       </button>
     </div>
