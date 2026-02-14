@@ -1,0 +1,299 @@
+<div class="catalog-page">
+  <div class="catalog-card">
+    <h1>Restaurant Catalog Service</h1>
+    <p class="subtitle">Gestiona restaurantes, menu y valida productos.</p>
+
+    <div class="tabs">
+      <button
+        class="tab"
+        *ngIf="!isRestaurant"
+        [class.active]="activeTab === 'restaurants'"
+        (click)="setTab('restaurants')"
+      >
+        Restaurantes
+      </button>
+      <button class="tab" [class.active]="activeTab === 'menu'" (click)="setTab('menu')">
+        Menu
+      </button>
+      <button class="tab" [class.active]="activeTab === 'validate'" (click)="setTab('validate')">
+        Validacion
+      </button>
+    </div>
+
+    <div class="alert error" *ngIf="error">{{ error }}</div>
+    <div class="alert success" *ngIf="success">{{ success }}</div>
+
+    <!-- Restaurantes -->
+    <section *ngIf="activeTab === 'restaurants' && !isRestaurant">
+      <div class="section-header">
+        <h2>Listado de restaurantes</h2>
+        <button class="btn-secondary" type="button" (click)="loadRestaurants()">Refrescar</button>
+      </div>
+
+      <div class="muted" *ngIf="loadingRestaurants">Cargando restaurantes...</div>
+      <div class="alert error" *ngIf="restaurantError">{{ restaurantError }}</div>
+
+      <div class="restaurant-grid">
+        <div class="restaurant-card" *ngFor="let restaurant of restaurants">
+          <div class="restaurant-head">
+            <h3>{{ restaurant.name }}</h3>
+            <span class="rating">{{ restaurant.rating | number:'1.1-1' }}</span>
+          </div>
+          <p class="muted">{{ restaurant.cuisine_type }} | {{ restaurant.opening_hours }}</p>
+          <p>{{ restaurant.address }}</p>
+          <p class="muted">Contacto: {{ restaurant.contact_phone }}</p>
+          <div class="card-actions">
+            <button class="btn-link" (click)="selectRestaurant(restaurant.id)">Ver menu</button>
+            <button class="btn-link" *ngIf="isAdmin" (click)="editRestaurant(restaurant)">Editar</button>
+            <button class="btn-link danger" *ngIf="isAdmin" (click)="deleteRestaurant(restaurant)">Eliminar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card" *ngIf="isAdmin">
+        <h3>{{ editingRestaurant ? 'Editar restaurante' : 'Nuevo restaurante' }}</h3>
+        <form [formGroup]="restaurantForm" (ngSubmit)="submitRestaurant()">
+          <div class="form-grid">
+            <div class="field">
+              <label>Nombre</label>
+              <input type="text" formControlName="name" />
+            </div>
+            <div class="field">
+              <label>Direccion</label>
+              <input type="text" formControlName="address" />
+            </div>
+            <div class="field">
+              <label>Tipo de cocina</label>
+              <input type="text" formControlName="cuisine_type" />
+            </div>
+            <div class="field">
+              <label>Horario</label>
+              <input type="text" formControlName="opening_hours" />
+            </div>
+            <div class="field">
+              <label>Contacto</label>
+              <input type="text" formControlName="contact_phone" />
+            </div>
+            <div class="field">
+              <label>Rating</label>
+              <input type="number" step="0.1" formControlName="rating" />
+            </div>
+            <div class="field" *ngIf="!isRestaurant">
+              <label>Owner ID</label>
+              <input type="number" formControlName="owner_id" />
+            </div>
+            <div class="field" *ngIf="isRestaurant">
+              <label>Owner ID</label>
+              <input type="text" [value]="currentUser?.id || ''" disabled />
+            </div>
+          </div>
+          <button class="btn-primary" type="submit">
+            {{ editingRestaurant ? 'Guardar cambios' : 'Crear restaurante' }}
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Menu -->
+    <section *ngIf="activeTab === 'menu'">
+      <div class="section-header">
+        <h2>Menu por restaurante</h2>
+        <div class="menu-controls">
+          <span class="muted" *ngIf="selectedRestaurantId; else noRestaurant">
+            Restaurante seleccionado: {{ selectedRestaurantName || ('#' + selectedRestaurantId) }}
+          </span>
+          <ng-template #noRestaurant>
+            <span class="muted">Selecciona un restaurante para ver el menu.</span>
+          </ng-template>
+          <button
+            class="btn-secondary"
+            type="button"
+            (click)="selectedRestaurantId && loadMenuItems(selectedRestaurantId, isClient)"
+            [disabled]="!selectedRestaurantId"
+          >
+            Refrescar
+          </button>
+        </div>
+      </div>
+
+      <table *ngIf="menuItems.length" class="data-table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Descripcion</th>
+            <th>Precio</th>
+            <th>Disponible</th>
+            <th *ngIf="isClient">Acciones</th>
+            <th *ngIf="isRestaurant">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of menuItems">
+            <td>{{ item.name }}</td>
+            <td>{{ item.description }}</td>
+            <td>{{ item.price | number:'1.2-2' }}</td>
+            <td>{{ item.available ? 'Si' : 'No' }}</td>
+            <td *ngIf="isClient">
+              <button class="btn-link" (click)="addToCart(item)">Agregar</button>
+            </td>
+            <td *ngIf="isRestaurant">
+              <button class="btn-link" (click)="editMenuItem(item)">Editar</button>
+              <button class="btn-link danger" (click)="deleteMenuItem(item)">Eliminar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="form-card" *ngIf="isClient">
+        <h3>Carrito</h3>
+        <div *ngIf="cartItems.length; else emptyCart">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entry of cartItems">
+                <td>{{ entry.item.name }}</td>
+                <td>
+                  <input
+                    type="number"
+                    min="1"
+                    [ngModel]="entry.quantity"
+                    (ngModelChange)="updateCartQuantity(entry.item.id, $event)"
+                  />
+                </td>
+                <td>{{ entry.item.price | number:'1.2-2' }}</td>
+                <td>{{ entry.item.price * entry.quantity | number:'1.2-2' }}</td>
+                <td>
+                  <button class="btn-link danger" (click)="removeFromCart(entry.item.id)">
+                    Quitar
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="actions">
+            <span class="muted">Total: Q {{ cartTotal | number:'1.2-2' }}</span>
+            <button class="btn-primary" type="button" (click)="submitOrderFromCatalog()" [disabled]="loading">
+              {{ loading ? 'Enviando...' : 'Enviar orden' }}
+            </button>
+          </div>
+        </div>
+        <ng-template #emptyCart>
+          <div class="muted">Agrega items del menu para crear tu orden.</div>
+        </ng-template>
+      </div>
+
+      <div class="form-card" *ngIf="isRestaurant">
+        <h3>{{ editingMenuItem ? 'Editar item' : 'Nuevo item' }}</h3>
+        <form [formGroup]="menuItemForm" (ngSubmit)="submitMenuItem()">
+          <div class="form-grid">
+            <div class="field" *ngIf="!isRestaurant">
+              <label>Restaurant ID</label>
+              <input type="number" formControlName="restaurant_id" />
+            </div>
+            <div class="field">
+              <label>Nombre</label>
+              <input type="text" formControlName="name" />
+            </div>
+            <div class="field">
+              <label>Descripcion</label>
+              <input type="text" formControlName="description" />
+            </div>
+            <div class="field">
+              <label>Precio</label>
+              <input type="number" step="0.01" formControlName="price" />
+            </div>
+            <div class="field">
+              <label>Disponible</label>
+              <select formControlName="available">
+                <option [ngValue]="true">Si</option>
+                <option [ngValue]="false">No</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-primary" type="submit">
+            {{ editingMenuItem ? 'Guardar cambios' : 'Crear item' }}
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Validacion -->
+    <section *ngIf="activeTab === 'validate'">
+      <h2>Validar items y precios</h2>
+      <form [formGroup]="validateForm" (ngSubmit)="submitValidation()">
+        <div class="field">
+          <label>Restaurant ID</label>
+          <input type="number" formControlName="restaurantId" placeholder="Ej: 1" />
+          <span class="error" *ngIf="validateForm.get('restaurantId')?.touched && validateForm.get('restaurantId')?.invalid">
+            Ingresa un restaurant ID valido
+          </span>
+        </div>
+
+        <div class="items">
+          <div class="items-header">
+            <h3>Productos</h3>
+            <button type="button" class="btn-secondary" (click)="addValidateItem()">Agregar</button>
+          </div>
+
+          <div class="item-row" *ngFor="let item of validateItems.controls; let i = index" [formGroupName]="i">
+            <div class="field">
+              <label>Product ID</label>
+              <input type="number" formControlName="product_id" placeholder="Ej: 1" />
+            </div>
+            <div class="field">
+              <label>Precio</label>
+              <input type="number" formControlName="price" placeholder="Ej: 75.00" step="0.01" />
+            </div>
+            <button type="button" class="btn-link" (click)="removeValidateItem(i)" [disabled]="validateItems.length === 1">
+              Quitar
+            </button>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" type="submit" [disabled]="loading">
+            {{ loading ? 'Validando...' : 'Validar catalogo' }}
+          </button>
+        </div>
+      </form>
+
+      <div class="results" *ngIf="response">
+        <div class="status" [class.ok]="response.valid" [class.bad]="!response.valid">
+          {{ response.message }}
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Existe</th>
+              <th>Restaurante</th>
+              <th>Precio</th>
+              <th>Precio actual</th>
+              <th>Mensaje</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of response.results">
+              <td>#{{ row.product_id }}</td>
+              <td>{{ row.exists ? 'Si' : 'No' }}</td>
+              <td>{{ row.belongs_to_restaurant ? 'Si' : 'No' }}</td>
+              <td>{{ row.price_matches ? 'Ok' : 'Difiere' }}</td>
+              <td>{{ row.current_price | number:'1.2-2' }}</td>
+              <td>{{ row.message }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>

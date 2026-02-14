@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { Auth } from '../../service/auth/auth';
 import { User } from '../../interfaces/User';
 
 const usuario_icon: string = 'https://img.icons8.com/?size=100&id=undefined&format=png&color=000000';
 const package_icon: string = 'https://img.icons8.com/?size=100&id=11229&format=png&color=000000';
 const map_icon: string = 'https://img.icons8.com/?size=100&id=110445&format=png&color=000000';
+const catalog_icon: string = 'https://img.icons8.com/fluency/48/restaurant-menu.png';
 
 @Component({
   selector: 'app-sidebar',
@@ -37,10 +38,16 @@ export class Sidebar implements OnInit {
       icon: map_icon,
       route: '/routes',
       roles: ['REPARTIDOR', 'ADMINISTRADOR']
+    }, 
+    {
+      label: 'Catálogo',
+      icon: catalog_icon,
+      route: '/catalog',
+      roles: ['CLIENTE', 'RESTAURANTE', 'ADMINISTRADOR']
     }
   ];
 
-  constructor(private authService: Auth) {}
+  constructor(private authService: Auth, private router: Router) {}
 
   ngOnInit(): void {
     this.authService.currentUser.subscribe(user => {
@@ -61,5 +68,6 @@ export class Sidebar implements OnInit {
 
   logout(): void {
     this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }

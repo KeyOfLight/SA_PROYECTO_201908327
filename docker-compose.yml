@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  mysql:
+    build: ./databases
+    container_name: deliver_eats_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: auth_db
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./databases/model.sql:/docker-entrypoint-initdb.d/model.sql
+    networks:
+      - deliver_eats_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.auth
+    container_name: deliver_eats_auth_service
+    restart: always
+    environment:
+      NODE_ENV: production
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpassword
+      MYSQL_DATABASE: auth_db
+      AUTH_SERVICE_PORT: 50051
+      JWT_SECRET: deliver-eats-secret-key-2026
+      JWT_EXPIRE: 7d
+    ports:
+      - "50051:50051"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - deliver_eats_network
+
+  restaurant-catalog-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.catalog
+    container_name: deliver_eats_catalog_service
+    restart: always
+    environment:
+      NODE_ENV: production
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpassword
+      MYSQL_DATABASE: restaurant_db
+      RESTAURANT_CATALOG_PORT: 50052
+    ports:
+      - "50052:50052"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - deliver_eats_network
+
+  order-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.order
+    container_name: deliver_eats_order_service
+    restart: always
+    environment:
+      NODE_ENV: production
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpassword
+      MYSQL_DATABASE: order_db
+      ORDER_SERVICE_PORT: 50053
+      RESTAURANT_CATALOG_URL: restaurant-catalog-service:50052
+    ports:
+      - "50053:50053"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - deliver_eats_network
+
+  gateway:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.gateway
+    container_name: deliver_eats_gateway
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      AUTH_SERVICE_URL: auth-service:50051
+      RESTAURANT_CATALOG_URL: restaurant-catalog-service:50052
+      ORDER_SERVICE_URL: order-service:50053
+      CORS_ORIGIN: http://localhost:4200
+    ports:
+      - "3000:3000"
+    depends_on:
+      auth-service:
+        condition: service_started
+      restaurant-catalog-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+    networks:
+      - deliver_eats_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  deliver_eats_network:
+    driver: bridge

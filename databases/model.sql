@@ -1,4 +1,4 @@
-CREATE DATABASE auth_db;
+CREATE DATABASE IF NOT EXISTS auth_db;
 USE auth_db;
 
 
@@ -17,13 +17,17 @@ INSERT INTO users (email, password, role) VALUES
 ('repartidor@mail.com', '$2b$10$esY04Z8T5nKTvROr3m4VYubPWNOrFKQ80F8qUrphuzYx9N4NtXcNS', 'REPARTIDOR');
 
 
-CREATE DATABASE restaurant_db;
+CREATE DATABASE IF NOT EXISTS restaurant_db;
 USE restaurant_db;
 
 CREATE TABLE restaurants (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     address VARCHAR(200) NOT NULL,
+    cuisine_type VARCHAR(100) DEFAULT 'General',
+    opening_hours VARCHAR(100) DEFAULT '09:00-21:00',
+    contact_phone VARCHAR(30) DEFAULT 'N/A',
+    rating DECIMAL(3,2) DEFAULT 0.0,
     owner_id INT NOT NULL, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -35,6 +39,7 @@ CREATE TABLE menu_items (
     description TEXT,
     price DECIMAL(10,2) NOT NULL,
     available BOOLEAN DEFAULT TRUE,
+    stock INT DEFAULT 10,
     CONSTRAINT fk_menu_restaurant
         FOREIGN KEY (restaurant_id)
         REFERENCES restaurants(id)
@@ -45,12 +50,12 @@ CREATE TABLE menu_items (
 INSERT INTO restaurants (name, address, owner_id)
 VALUES ('Pizza Express', 'Zona 1, Guatemala', 3);
 
-INSERT INTO menu_items (restaurant_id, name, description, price) VALUES
-(1, 'Pizza Pepperoni', 'Pizza grande con pepperoni', 75.00),
-(1, 'Pizza Hawaiana', 'Pizza con piña y jamón', 70.00);
+INSERT INTO menu_items (restaurant_id, name, description, price, available, stock) VALUES
+(1, 'Pizza Pepperoni', 'Pizza grande con pepperoni', 75.00, TRUE, 20),
+(1, 'Pizza Hawaiana', 'Pizza con piña y jamón', 70.00, TRUE, 20);
 
 
-CREATE DATABASE order_db;
+CREATE DATABASE IF NOT EXISTS order_db;
 USE order_db;
 
 
@@ -86,7 +91,7 @@ INSERT INTO order_items (order_id, menu_item_id, quantity, price) VALUES
 (1, 2, 1, 70.00);
 
 
-CREATE DATABASE delivery_db;
+CREATE DATABASE IF NOT EXISTS delivery_db;
 USE delivery_db;
 
 
@@ -102,7 +107,7 @@ INSERT INTO deliveries (order_id, delivery_user_id, status)
 VALUES (1, 4, 'EN_CAMINO');
 
 
-CREATE DATABASE notification_db;
+CREATE DATABASE IF NOT EXISTS notification_db;
 USE notification_db;
 
 

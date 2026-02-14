@@ -6,6 +6,8 @@
     "start": "node dist/gateway.js",
     "dev": "ts-node src/gateway.ts",
     "dev:auth": "ts-node src/modules/auth/auth-module.ts",
+    "dev:catalog": "ts-node src/modules/restaurant-catalog/restaurant-catalog.module.ts",
+    "dev:order": "ts-node src/modules/order/order.module.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package restaurant_catalog;
+
+message ProductPrice {
+  int32 product_id = 1;
+  double price = 2;
+  int32 quantity = 3;
+}
+
+message ValidateItemsRequest {
+  int32 restaurant_id = 1;
+  repeated ProductPrice items = 2;
+}
+
+message ItemValidation {
+  int32 product_id = 1;
+  bool exists = 2;
+  bool belongs_to_restaurant = 3;
+  bool price_matches = 4;
+  double current_price = 5;
+  string message = 6;
+  bool in_stock = 7;
+}
+
+message ValidateItemsResponse {
+  bool valid = 1;
+  string message = 2;
+  repeated ItemValidation results = 3;
+}
+
+message Restaurant {
+  int32 id = 1;
+  string name = 2;
+  string address = 3;
+  string cuisine_type = 4;
+  string opening_hours = 5;
+  string contact_phone = 6;
+  double rating = 7;
+  int32 owner_id = 8;
+}
+
+message MenuItem {
+  int32 id = 1;
+  int32 restaurant_id = 2;
+  string name = 3;
+  string description = 4;
+  double price = 5;
+  bool available = 6;
+}
+
+message RestaurantIdRequest {
+  int32 id = 1;
+}
+
+message MenuItemIdRequest {
+  int32 id = 1;
+}
+
+message RestaurantResponse {
+  bool success = 1;
+  string message = 2;
+  Restaurant restaurant = 3;
+}
+
+message MenuItemResponse {
+  bool success = 1;
+  string message = 2;
+  MenuItem item = 3;
+}
+
+message RestaurantsResponse {
+  bool success = 1;
+  string message = 2;
+  repeated Restaurant restaurants = 3;
+}
+
+message MenuItemsResponse {
+  bool success = 1;
+  string message = 2;
+  repeated MenuItem items = 3;
+}
+
+message CreateRestaurantRequest {
+  string name = 1;
+  string address = 2;
+  string cuisine_type = 3;
+  string opening_hours = 4;
+  string contact_phone = 5;
+  double rating = 6;
+  int32 owner_id = 7;
+}
+
+message UpdateRestaurantRequest {
+  int32 id = 1;
+  string name = 2;
+  string address = 3;
+  string cuisine_type = 4;
+  string opening_hours = 5;
+  string contact_phone = 6;
+  double rating = 7;
+  int32 owner_id = 8;
+}
+
+message CreateMenuItemRequest {
+  int32 restaurant_id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  bool available = 5;
+}
+
+message UpdateMenuItemRequest {
+  int32 id = 1;
+  int32 restaurant_id = 2;
+  string name = 3;
+  string description = 4;
+  double price = 5;
+  bool available = 6;
+}
+
+message ListMenuItemsRequest {
+  int32 restaurant_id = 1;
+  bool only_available = 2;
+}
+
+service RestaurantCatalogService {
+  rpc ValidateItems(ValidateItemsRequest) returns (ValidateItemsResponse);
+  rpc CreateRestaurant(CreateRestaurantRequest) returns (RestaurantResponse);
+  rpc GetRestaurant(RestaurantIdRequest) returns (RestaurantResponse);
+  rpc UpdateRestaurant(UpdateRestaurantRequest) returns (RestaurantResponse);
+  rpc DeleteRestaurant(RestaurantIdRequest) returns (RestaurantResponse);
+  rpc ListRestaurants(RestaurantIdRequest) returns (RestaurantsResponse);
+  rpc CreateMenuItem(CreateMenuItemRequest) returns (MenuItemResponse);
+  rpc GetMenuItem(MenuItemIdRequest) returns (MenuItemResponse);
+  rpc UpdateMenuItem(UpdateMenuItemRequest) returns (MenuItemResponse);
+  rpc DeleteMenuItem(MenuItemIdRequest) returns (MenuItemResponse);
+  rpc ListMenuItemsByRestaurant(ListMenuItemsRequest) returns (MenuItemsResponse);
+}

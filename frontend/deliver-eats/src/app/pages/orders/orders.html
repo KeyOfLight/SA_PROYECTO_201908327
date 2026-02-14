@@ -1,0 +1,124 @@
+<div class="orders-page">
+  <div class="orders-card">
+    <h1>Order Service</h1>
+    <p class="subtitle">Crea ordenes y gestiona su estado.</p>
+
+    <div class="tabs">
+      <button
+        class="tab"
+        *ngIf="isClient"
+        [class.active]="activeTab === 'create'"
+        (click)="setTab('create')"
+      >
+        Crear orden
+      </button>
+      <button class="tab" [class.active]="activeTab === 'list'" (click)="setTab('list')">
+        Mis ordenes
+      </button>
+    </div>
+
+    <div class="alert error" *ngIf="error">{{ error }}</div>
+    <div class="alert success" *ngIf="success">{{ success }}</div>
+
+    <section *ngIf="activeTab === 'create' && isClient">
+      <div class="form-card">
+        <h3>Nueva orden</h3>
+        <form [formGroup]="orderForm" (ngSubmit)="submitOrder()">
+          <div class="form-grid">
+            <div class="field">
+              <label>Restaurant ID</label>
+              <input type="number" formControlName="restaurant_id" />
+            </div>
+          </div>
+
+          <div class="items">
+            <div class="items-header">
+              <h4>Items</h4>
+              <button type="button" class="btn-secondary" (click)="addItem()">Agregar</button>
+            </div>
+
+            <div class="item-row" *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+              <div class="field">
+                <label>Menu Item ID</label>
+                <input type="number" formControlName="menu_item_id" />
+              </div>
+              <div class="field">
+                <label>Cantidad</label>
+                <input type="number" formControlName="quantity" />
+              </div>
+              <div class="field">
+                <label>Precio</label>
+                <input type="number" step="0.01" formControlName="price" />
+              </div>
+              <button type="button" class="btn-link" (click)="removeItem(i)" [disabled]="items.length === 1">
+                Quitar
+              </button>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn-primary" type="submit" [disabled]="loading">
+              {{ loading ? 'Creando...' : 'Crear orden' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section *ngIf="activeTab === 'list'">
+      <div class="section-header">
+        <h2>{{ isRestaurant ? 'Ordenes del restaurante' : 'Mis ordenes' }}</h2>
+        <button class="btn-secondary" type="button" (click)="loadOrders()">Refrescar</button>
+      </div>
+
+      <div class="order-list" *ngIf="orders.length; else emptyState">
+        <div class="order-card" *ngFor="let order of orders">
+          <div class="order-head">
+            <div>
+              <h3>Orden #{{ order.id }}</h3>
+              <p class="muted">Restaurante: {{ order.restaurant_id }}</p>
+              <p class="muted">Estado: {{ order.status }}</p>
+            </div>
+            <div class="order-total">Q {{ order.total | number:'1.2-2' }}</div>
+          </div>
+
+          <table class="data-table" *ngIf="order.items?.length">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of order.items">
+                <td>#{{ item.menu_item_id }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>Q {{ item.price | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="card-actions">
+            <button
+              class="btn-link danger"
+              *ngIf="isClient && canCancel(order)"
+              (click)="cancelOrder(order)"
+            >
+              Cancelar
+            </button>
+            <ng-container *ngIf="isRestaurant">
+              <button class="btn-link" (click)="updateStatus(order, 'accept')">Aceptar</button>
+              <button class="btn-link" (click)="updateStatus(order, 'finish')">Finalizar</button>
+              <button class="btn-link danger" (click)="updateStatus(order, 'reject')">Rechazar</button>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #emptyState>
+        <div class="muted">No hay ordenes para mostrar.</div>
+      </ng-template>
+    </section>
+  </div>
+</div>

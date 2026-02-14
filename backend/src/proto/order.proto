@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package order;
+
+message OrderItemInput {
+  int32 menu_item_id = 1;
+  int32 quantity = 2;
+  double price = 3;
+}
+
+message ValidationProduct {
+  int32 product_id = 1;
+  double price = 2;
+}
+
+message ValidationRequest {
+  int32 restaurant_id = 1;
+  repeated ValidationProduct items = 2;
+}
+
+message ValidationItem {
+  int32 product_id = 1;
+  bool exists = 2;
+  bool belongs_to_restaurant = 3;
+  bool price_matches = 4;
+  double current_price = 5;
+  string message = 6;
+}
+
+message ValidationResponse {
+  bool valid = 1;
+  string message = 2;
+  repeated ValidationItem results = 3;
+}
+
+message CreateOrderRequest {
+  int32 user_id = 1;
+  int32 restaurant_id = 2;
+  repeated OrderItemInput items = 3;
+}
+
+message OrderItem {
+  int32 id = 1;
+  int32 order_id = 2;
+  int32 menu_item_id = 3;
+  int32 quantity = 4;
+  double price = 5;
+}
+
+message Order {
+  int32 id = 1;
+  int32 user_id = 2;
+  int32 restaurant_id = 3;
+  string status = 4;
+  double total = 5;
+  string created_at = 6;
+  repeated OrderItem items = 7;
+}
+
+message OrderResponse {
+  bool success = 1;
+  string message = 2;
+  Order order = 3;
+  ValidationResponse validation = 4;
+}
+
+message OrdersResponse {
+  bool success = 1;
+  string message = 2;
+  repeated Order orders = 3;
+}
+
+message OrderIdRequest {
+  int32 id = 1;
+}
+
+message CancelOrderRequest {
+  int32 id = 1;
+  int32 user_id = 2;
+}
+
+message ListOrdersByUserRequest {
+  int32 user_id = 1;
+}
+
+message ListOrdersByRestaurantRequest {
+  int32 restaurant_id = 1;
+}
+
+message UpdateOrderStatusRequest {
+  int32 id = 1;
+  string status = 2;
+  int32 restaurant_id = 3;
+}
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (OrderResponse);
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (OrderResponse);
+  rpc ListOrdersByUser(ListOrdersByUserRequest) returns (OrdersResponse);
+  rpc ListOrdersByRestaurant(ListOrdersByRestaurantRequest) returns (OrdersResponse);
+}

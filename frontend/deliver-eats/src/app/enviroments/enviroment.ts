@@ -5,6 +5,11 @@ export const Backend = {
     routes: {
         login: '/auth/login',
         register: '/auth/register',
+        catalogValidate: '/catalog/validate-items',
+        catalogRestaurants: '/catalog/restaurants',
+        catalogMenuItems: '/catalog/menu-items',
+        orders: '/orders',
+        ordersRestaurant: '/orders/restaurant',
         auth: '/auth/validate-token',
     },
     backend_route: 'http://localhost:3000/api',
