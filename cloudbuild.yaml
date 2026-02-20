@@ -1,0 +1,191 @@
+steps:
+  # Step 1: Build Docker images
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-gateway'
+    args: 
+      - 'build'
+      - '-f'
+      - 'backend/Dockerfile.gateway'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/gateway:$SHORT_SHA'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/gateway:latest'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-auth'
+    args: 
+      - 'build'
+      - '-f'
+      - 'backend/Dockerfile.auth'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/auth-service:$SHORT_SHA'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/auth-service:latest'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-catalog'
+    args: 
+      - 'build'
+      - '-f'
+      - 'backend/Dockerfile.catalog'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/catalog-service:$SHORT_SHA'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/catalog-service:latest'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-order'
+    args: 
+      - 'build'
+      - '-f'
+      - 'backend/Dockerfile.order'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/order-service:$SHORT_SHA'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/order-service:latest'
+      - '.'
+
+  # Step 2: Push images to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-gateway'
+    args: 
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/gateway:$SHORT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-gateway-latest'
+    args: 
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/gateway:latest'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-auth'
+    args: 
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/auth-service:$SHORT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-auth-latest'
+    args: 
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/auth-service:latest'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-catalog'
+    args: 
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/catalog-service:$SHORT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-catalog-latest'
+    args: 
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/catalog-service:latest'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-order'
+    args: 
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/order-service:$SHORT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-order-latest'
+    args: 
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/order-service:latest'
+
+  # Step 3: Update GKE deployments
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'update-gateway'
+    args: 
+      - 'set'
+      - 'image'
+      - 'deployment/gateway'
+      - 'gateway=us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/gateway:$SHORT_SHA'
+      - '-n'
+      - 'deliver-eats'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=deliver-eats-cluster'
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'update-auth'
+    args: 
+      - 'set'
+      - 'image'
+      - 'deployment/auth-service'
+      - 'auth-service=us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/auth-service:$SHORT_SHA'
+      - '-n'
+      - 'deliver-eats'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=deliver-eats-cluster'
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'update-catalog'
+    args: 
+      - 'set'
+      - 'image'
+      - 'deployment/catalog-service'
+      - 'catalog-service=us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/catalog-service:$SHORT_SHA'
+      - '-n'
+      - 'deliver-eats'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=deliver-eats-cluster'
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'update-order'
+    args: 
+      - 'set'
+      - 'image'
+      - 'deployment/order-service'
+      - 'order-service=us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/order-service:$SHORT_SHA'
+      - '-n'
+      - 'deliver-eats'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=deliver-eats-cluster'
+
+  # Step 4: Verify deployment
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'verify-gateway'
+    args: 
+      - 'rollout'
+      - 'status'
+      - 'deployment/gateway'
+      - '-n'
+      - 'deliver-eats'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=deliver-eats-cluster'
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'list-resources'
+    args: 
+      - 'get'
+      - 'all'
+      - '-n'
+      - 'deliver-eats'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=deliver-eats-cluster'
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/gateway:$SHORT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/gateway:latest'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/auth-service:$SHORT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/auth-service:latest'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/catalog-service:$SHORT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/catalog-service:latest'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/order-service:$SHORT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/deliver-eats-repo/order-service:latest'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: '1800s'

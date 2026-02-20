@@ -2,11 +2,12 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm ci
 
-COPY tsconfig.json ./
-COPY src ./src
+
+COPY backend/tsconfig.json ./
+COPY backend/src ./src
 
 RUN npm run build
 
@@ -16,11 +17,11 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/src/proto ./dist/proto
+COPY backend/src/proto ./dist/proto
 
 EXPOSE 50051
 

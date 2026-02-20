@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: deliver-eats
+  labels:
+    app: auth-service
+    version: v1
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+        version: v1
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: auth-service
+        image: us-central1-docker.pkg.dev/enduring-guard-457223-c4/deliver-eats-repo/auth-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: grpc
+          containerPort: 50051
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: MYSQL_HOST
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: MYSQL_HOST
+        - name: MYSQL_PORT
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: MYSQL_PORT
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: MYSQL_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: MYSQL_DATABASE
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: JWT_SECRET
+        - name: JWT_EXPIRE
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: JWT_EXPIRE
+        - name: AUTH_SERVICE_PORT
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: AUTH_SERVICE_PORT
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "node -e \"require('net').createConnection({port:50051}, () => process.exit(0))\""
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "node -e \"require('net').createConnection({port:50051}, () => process.exit(0))\""
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: deliver-eats
+  labels:
+    app: auth-service
+spec:
+  type: ClusterIP
+  clusterIP: None  # Headless service para gRPC
+  selector:
+    app: auth-service
+  ports:
+  - name: grpc
+    protocol: TCP
+    port: 50051
+    targetPort: 50051

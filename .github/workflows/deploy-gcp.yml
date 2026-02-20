@@ -1,0 +1,139 @@
+name: Deploy to GCP/GKE
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PROJECT_ID: deliver-eats-project
+  GKE_CLUSTER: deliver-eats-cluster
+  GKE_ZONE: us-central1-a
+  REGISTRY: us-central1-docker.pkg.dev
+  NAMESPACE: deliver-eats
+
+jobs:
+  setup-build-deploy:
+    name: Setup, Build, and Deploy
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+        service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+
+    - name: Configure Docker registry
+      run: |
+        gcloud auth configure-docker ${{ env.REGISTRY }}
+
+    - name: Get GKE credentials
+      run: |
+        gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} \
+          --zone ${{ env.GKE_ZONE }}
+
+    - name: Build gateway image
+      run: |
+        docker build -f backend/Dockerfile.gateway \
+          -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/gateway:${{ github.sha }} \
+          -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/gateway:latest .
+
+    - name: Build auth-service image
+      run: |
+        docker build -f backend/Dockerfile.auth \
+          -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/auth-service:${{ github.sha }} \
+          -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/auth-service:latest .
+
+    - name: Build catalog-service image
+      run: |
+        docker build -f backend/Dockerfile.catalog \
+          -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/catalog-service:${{ github.sha }} \
+          -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/catalog-service:latest .
+
+    - name: Build order-service image
+      run: |
+        docker build -f backend/Dockerfile.order \
+          -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/order-service:${{ github.sha }} \
+          -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/order-service:latest .
+
+    - name: Push gateway image
+      run: |
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/gateway:${{ github.sha }}
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/gateway:latest
+
+    - name: Push auth-service image
+      run: |
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/auth-service:${{ github.sha }}
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/auth-service:latest
+
+    - name: Push catalog-service image
+      run: |
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/catalog-service:${{ github.sha }}
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/catalog-service:latest
+
+    - name: Push order-service image
+      run: |
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/order-service:${{ github.sha }}
+        docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/order-service:latest
+
+    - name: Update gateway deployment
+      run: |
+        kubectl set image deployment/gateway \
+          gateway=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/gateway:${{ github.sha }} \
+          -n ${{ env.NAMESPACE }}
+
+    - name: Update auth-service deployment
+      run: |
+        kubectl set image deployment/auth-service \
+          auth-service=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/auth-service:${{ github.sha }} \
+          -n ${{ env.NAMESPACE }}
+
+    - name: Update catalog-service deployment
+      run: |
+        kubectl set image deployment/catalog-service \
+          catalog-service=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/catalog-service:${{ github.sha }} \
+          -n ${{ env.NAMESPACE }}
+
+    - name: Update order-service deployment
+      run: |
+        kubectl set image deployment/order-service \
+          order-service=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/deliver-eats-repo/order-service:${{ github.sha }} \
+          -n ${{ env.NAMESPACE }}
+
+    - name: Wait for rollout to complete
+      run: |
+        kubectl rollout status deployment/gateway -n ${{ env.NAMESPACE }} --timeout=5m
+
+    - name: Verify deployment
+      run: |
+        echo "Pods status:"
+        kubectl get pods -n ${{ env.NAMESPACE }}
+        echo ""
+        echo "Services status:"
+        kubectl get services -n ${{ env.NAMESPACE }}
+
+    - name: Send deployment notification
+      if: always()
+      run: |
+        STATUS="${{ job.status }}"
+        EMOJI="✅"
+        if [ "$STATUS" != "success" ]; then
+          EMOJI="❌"
+        fi
+        echo "$EMOJI Deployment $STATUS for commit ${{ github.sha }}"
+        echo "Branch: ${{ github.ref }}"
+        echo "Actor: ${{ github.actor }}"

@@ -22,6 +22,15 @@ if (config.nodeEnv === 'development') {
   });
 }
 
+// Health check endpoint para Kubernetes
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'gateway'
+  });
+});
+
 // Rutas
 app.use('/api', gatewayRouter);
 

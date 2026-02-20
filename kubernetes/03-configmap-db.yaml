@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-init-script
+  namespace: deliver-eats
+data:
+  init.sql: |
+    -- El contenido del archivo databases/model.sql se carga aquí
+    -- Este será reemplazado por kubectl create configmap db-scripts --from-file=...

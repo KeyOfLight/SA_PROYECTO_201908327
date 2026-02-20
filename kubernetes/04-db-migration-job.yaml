@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration
+  namespace: deliver-eats
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      serviceAccountName: default
+      containers:
+      - name: mysql-migration
+        image: mysql:8.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: MYSQL_HOST
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: MYSQL_HOST
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: MYSQL_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: MYSQL_DATABASE
+        command:
+        - sh
+        - -c
+        - |
+          echo "Esperando a que la base de datos esté lista..."
+          for i in {1..30}; do
+            if mysql -h $MYSQL_HOST -u $MYSQL_USER -p$MYSQL_PASSWORD -e "SELECT 1" > /dev/null 2>&1; then
+              echo "Base de datos lista!"
+              break
+            fi
+            echo "Intento $i/30... esperando..."
+            sleep 10
+          done
+          echo "Ejecutando migraciones..."
+          mysql -h $MYSQL_HOST -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE < /scripts/model.sql
+          echo "¡Migraciones completadas!"
+        volumeMounts:
+        - name: migration-scripts
+          mountPath: /scripts
+      volumes:
+      - name: migration-scripts
+        configMap:
+          name: db-init-script
+      restartPolicy: Never
